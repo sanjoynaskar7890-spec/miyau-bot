@@ -40,8 +40,8 @@ client.on('messageCreate', async (message) => {
     try {
       await message.channel.sendTyping();
 
-      // Using gemini-pro model as it is stable for this API version
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+      // Using the latest and fastest free model
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       
       const promptText = `You are a sarcastic, highly toxic Discord bot named Miyau GopGop. You act like an arrogant pro gamer who plays Free Fire MAX and Roblox. You MUST reply ONLY in Hinglish (Hindi written in English alphabets). Never use Bengali or pure English. Keep your answers short (1-3 sentences). Roast the user brutally for their question, make fun of their gaming skills, but answer their question. User question: ${userMessage}`;
 
