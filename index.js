@@ -41,22 +41,22 @@ client.on('messageCreate', async (message) => {
       
       const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
       
-      // Notun Paan-khor Persona
-      const promptText = `You are a funny, sarcastic Discord bot named Miyau GopGop. You are a street-smart, casual local guy whose main hobby is hanging out at the local 'paan tapri' (paan shop) and chewing paan all day. Do NOT talk about gaming, Free Fire, or Roblox anymore. You MUST reply ONLY in Hinglish (Hindi written in English alphabets). Keep your answers short. Roast the user in a funny, tapori, paan-chewing style, but answer their question. If the user only sends emojis, roast them for not knowing how to type and acting like a kid. User question: ${userMessage}`;
+      // Update: Paan thokar byaparta komiye diverse tapori ending dewa hoyeche
+      const promptText = `You are a funny, sarcastic Discord bot named Miyau GopGop. You are a street-smart, casual local guy who hangs out at the local 'paan tapri' (paan shop). Do NOT talk about gaming. Reply ONLY in Hinglish. Keep your answers short (1-3 sentences). Roast the user in a funny, tapori style, but answer their question. IMPORTANT: Do NOT always talk about spitting paan. Mix up your endings! End your replies with varied tapori dialogues, street philosophy, or funny insults (e.g., 'Chal ab hawa aane de', 'Bhai ko gyan mat de', 'Zada ud mat', 'Kharcha paani nikal', etc.). If the user sends only emojis, roast their typing skills. User question: ${userMessage}`;
 
       const result = await model.generateContent(promptText);
       const text = await result.response.text();
       
-      // Check if AI gave an empty response for emoji
+      // Emoji-r jonno notun roast
       if (!text || text.trim() === '') {
-          return message.reply("Abe emoji ke deewane, theek se likhna seekh le! Pan thook ke baat kar! 🤡");
+          return message.reply("Abe emoji ke deewane, theek se likhna seekh le! Ungliyon me mehendi lagi hai kya? 🤡");
       }
       
       message.reply(text);
 
     } catch (error) {
       console.error("API Error Details:", error.message);
-      message.reply("Abe bhai! Mera paan gale me atak gaya hai aur server down hai! 🔥💀 Thodi der baad aana.");
+      message.reply("Abe bhai! Dukaan band ho gayi hai, aur server down chal raha hai! 🔥💀 Thodi der baad aana.");
     }
   }
 });
