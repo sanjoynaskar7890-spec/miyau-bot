@@ -1,6 +1,5 @@
 const http = require('http');
 const { Client, GatewayIntentBits } = require('discord.js');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // Render ke boka bananor jonno dummy server
 const server = http.createServer((req, res) => {
@@ -17,10 +16,8 @@ const client = new Client({
   ]
 });
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 client.on('ready', () => {
-  console.log(`AI Bot online hoye geche: ${client.user.tag}`);
+  console.log(`Bot online hoye geche: ${client.user.tag}`);
 });
 
 client.on('messageCreate', async (message) => {
@@ -29,7 +26,6 @@ client.on('messageCreate', async (message) => {
   if (message.mentions.has(client.user)) {
     const userMessage = message.content.replace(/<@!?\d+>/g, '').trim();
 
-    // Khali mention korle Hinglish reply
     if (!userMessage) {
       return message.reply("Arey bhai, khali mention kyun kar raha hai? Kuch bol toh sahi!");
     }
@@ -37,18 +33,32 @@ client.on('messageCreate', async (message) => {
     try {
       await message.channel.sendTyping();
 
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      // Direct Google Gemini API Fetch Request (No heavy library issues)
+      const apiKey = process.env.GEMINI_API_KEY;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+      const promptText = `You are a sarcastic, funny Discord bot named Miyau GopGop who acts like a toxic pro gamer playing Free Fire MAX and Roblox. Reply ONLY in Hinglish. Roast the user heavily for their question, but answer it. User question: ${userMessage}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: promptText }] }]
+        })
+      });
+
+      const data = await response.json();
       
-      const botPersonality = `You are a highly sarcastic, funny Discord bot named Miyau GopGop. You act like a toxic pro gamer who loves playing Free Fire MAX and Roblox. You MUST reply ONLY in Hinglish (Hindi written in English alphabets). Never use Bengali or pure English. Keep your answers short (1-3 sentences). Roast the user heavily for their question, but make sure to answer it. User's prompt: ${userMessage}`;
+      if (data.candidates && data.candidates[0].content) {
+        const replyText = data.candidates[0].content.parts[0].text;
+        message.reply(replyText);
+      } else {
+        message.reply("Abe noob, tera sawal itna ajeeb tha ki mera system hi hang ho gaya! 💀 Thodi der baad try kar.");
+      }
 
-      const result = await model.generateContent(botPersonality);
-      const response = await result.response.text();
-
-      message.reply(response);
     } catch (error) {
       console.error(error);
-      // API ba system error hole pure gamer style e reply debe
-      message.reply("Bhai, mera ping 999+ chal raha hai aur tera noob jaisa sawal load nahi ho raha! 😡 Server me bahut lag hai, thodi der baad aana.");
+      message.reply("Bhai, network cut ho gaya! Thodi der baad aana.");
     }
   }
 });
