@@ -2,7 +2,6 @@ const http = require('http');
 const { Client, GatewayIntentBits } = require('discord.js');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Dummy server to keep Render port active
 const server = http.createServer((req, res) => {
   res.writeHead(200);
   res.end('AI Bot is running perfectly!');
@@ -17,12 +16,31 @@ const client = new Client({
   ]
 });
 
-// Initialize Google Generative AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-client.on('ready', () => {
+// Bot start holei prothome Google ke jera korbe
+client.on('ready', async () => {
   console.log(`Bot is online as: ${client.user.tag}`);
+  
+  console.log("🔍 Checking available models for your API Key...");
+  try {
+    // Direct Google API theke model list fetch kora hocche
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`);
+    const data = await response.json();
+    
+    console.log("==========================================");
+    console.log("🚨 ASOL CULPRIT DHORA PORECHHE! 🚨");
+    console.log("Tomar API Key te ei model gulo available:");
+    if (data.models) {
+      data.models.forEach(model => console.log("-> " + model.name));
+    } else {
+      console.log("❌ Error API Data:", JSON.stringify(data));
+    }
+    console.log("==========================================");
+  } catch (err) {
+    console.log("Fetch error:", err);
+  }
 });
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
@@ -36,21 +54,16 @@ client.on('messageCreate', async (message) => {
 
     try {
       await message.channel.sendTyping();
-
-      // UNIVERSAL STABLE MODEL: gemini-pro (Eta sob API key te kaj kore)
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-      
-      const promptText = `You are a sarcastic, highly toxic Discord bot named Miyau GopGop. You act like an arrogant pro gamer who plays Free Fire MAX and Roblox. You MUST reply ONLY in Hinglish (Hindi written in English alphabets). Never use Bengali or pure English. Keep your answers short (1-3 sentences). Roast the user brutally for their question, make fun of their gaming skills, but answer their question. User question: ${userMessage}`;
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const promptText = `You are a sarcastic, highly toxic Discord bot named Miyau GopGop. You act like an arrogant pro gamer who plays Free Fire MAX and Roblox. Reply ONLY in Hinglish. Roast the user brutally but answer their question. User question: ${userMessage}`;
 
       const result = await model.generateContent(promptText);
-      const response = await result.response;
-      const text = response.text();
-
+      const text = await result.response.text();
       message.reply(text);
 
     } catch (error) {
-      console.error("API Error Details:", error);
-      message.reply("Abe noob! Mera ping 999+ chala gaya hai aur server hag raha hai! 💀🔥 Thodi der baad aana.");
+      console.error("API Error Details:", error.message);
+      message.reply("Abe noob! Mera ping 999+ chala gaya hai! Render ke 'Logs' check kar waha asli culprit pakda gaya hai! 💀🔥");
     }
   }
 });
