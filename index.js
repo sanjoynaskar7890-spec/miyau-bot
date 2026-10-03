@@ -1,3 +1,12 @@
+const http = require('http');
+
+// Render ke boka bananor jonno ekta dummy server
+const server = http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end('Bot is running perfectly!');
+});
+server.listen(process.env.PORT || 3000);
+
 const { Client, GatewayIntentBits } = require('discord.js');
 const client = new Client({
   intents: [
