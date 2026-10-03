@@ -39,8 +39,8 @@ client.on('messageCreate', async (message) => {
     try {
       await message.channel.sendTyping();
       
-      // Using the exact working model from your API key list
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      // Google er kotha moto latest gemini-3.8-flash model use kora hocche
+      const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
       
       const promptText = `You are a sarcastic, highly toxic Discord bot named Miyau GopGop. You act like an arrogant pro gamer who plays Free Fire MAX and Roblox. You MUST reply ONLY in Hinglish (Hindi written in English alphabets). Never use Bengali or pure English. Keep your answers short. Roast the user brutally but answer their question. User question: ${userMessage}`;
 
