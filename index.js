@@ -32,9 +32,9 @@ client.on('messageCreate', async (message) => {
     try {
       await message.channel.sendTyping();
 
-      // Sothik Gemini 1.5 Flash model URL
+      // v1beta theke palte v1 kora holo ar gemini-2.0-flash / gemini-1.5-flash use kora jacche
       const apiKey = process.env.GEMINI_API_KEY;
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
       const promptText = `You are a sarcastic, funny Discord bot named Miyau GopGop who acts like a toxic pro gamer playing Free Fire MAX and Roblox. Reply ONLY in Hinglish. Roast the user heavily for their question, but answer it. User question: ${userMessage}`;
 
