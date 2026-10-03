@@ -8,6 +8,6 @@
   },
   "dependencies": {
     "discord.js": "^14.13.0",
-    "@google/generative-ai": "latest"
+    "@google/generative-ai": "^0.21.0"
   }
 }
