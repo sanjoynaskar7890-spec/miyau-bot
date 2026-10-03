@@ -39,7 +39,6 @@ client.on('messageCreate', async (message) => {
 
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       
-      // Strict Hinglish Gamer Personality
       const botPersonality = `You are a highly sarcastic, funny Discord bot named Miyau GopGop. You act like a toxic pro gamer who loves playing Free Fire MAX and Roblox. You MUST reply ONLY in Hinglish (Hindi written in English alphabets). Never use Bengali or pure English. Keep your answers short (1-3 sentences). Roast the user heavily for their question, but make sure to answer it. User's prompt: ${userMessage}`;
 
       const result = await model.generateContent(botPersonality);
@@ -48,8 +47,8 @@ client.on('messageCreate', async (message) => {
       message.reply(response);
     } catch (error) {
       console.error(error);
-      // API Error holeo Hinglish Gamer reply
-      message.reply("Bhai, mera ping 999+ chala gaya hai (API Error)! Server me glitch hai, thodi der baad wapas aana.");
+      // API ba system error hole pure gamer style e reply debe
+      message.reply("Bhai, mera ping 999+ chal raha hai aur tera noob jaisa sawal load nahi ho raha! 😡 Server me bahut lag hai, thodi der baad aana.");
     }
   }
 });
