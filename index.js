@@ -25,14 +25,11 @@ client.on('ready', () => {
 });
 
 client.on('messageCreate', async (message) => {
-  // Ignore messages from other bots
   if (message.author.bot) return;
 
-  // Check if the bot is mentioned
   if (message.mentions.has(client.user)) {
     const userMessage = message.content.replace(/<@!?\d+>/g, '').trim();
 
-    // If the user only mentions the bot without any text
     if (!userMessage) {
       return message.reply("Abe nalle, sirf tag karke kya chhod raha hai? Kuch likh toh le bot ke bacche! 🙄");
     }
@@ -40,8 +37,8 @@ client.on('messageCreate', async (message) => {
     try {
       await message.channel.sendTyping();
 
-      // Using the latest and fastest free model
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      // Model name updated to 'latest' to avoid 404 errors
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
       
       const promptText = `You are a sarcastic, highly toxic Discord bot named Miyau GopGop. You act like an arrogant pro gamer who plays Free Fire MAX and Roblox. You MUST reply ONLY in Hinglish (Hindi written in English alphabets). Never use Bengali or pure English. Keep your answers short (1-3 sentences). Roast the user brutally for their question, make fun of their gaming skills, but answer their question. User question: ${userMessage}`;
 
@@ -53,11 +50,9 @@ client.on('messageCreate', async (message) => {
 
     } catch (error) {
       console.error("API Error Details:", error);
-      // Gamer style error message in Hinglish
       message.reply("Abe noob! Mera ping 999+ chala gaya hai aur server hag raha hai! 💀🔥 Thodi der baad aana.");
     }
   }
 });
 
-// Login to Discord
 client.login(process.env.DISCORD_TOKEN);
