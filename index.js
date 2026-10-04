@@ -29,11 +29,22 @@ client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
   if (message.mentions.has(client.user)) {
-    const userMessage = message.content.replace(/<@!?\d+>/g, '').trim();
+    let userMessage = message.content.replace(/<@!?\d+>/g, '').trim();
+    
+    // Check if user sent any stickers or attachments (images/files)
+    let hasMedia = message.stickers.size > 0 || message.attachments.size > 0;
 
-    // Hinglish reply for empty mentions
-    if (!userMessage) {
-      return message.reply("Abe chuna laga diya kya? Sirf tag kar raha hai, kuch bol toh sahi! 🙄");
+    // Jodi user tag kore kichui na pathay (no text, no sticker, no image)
+    if (!userMessage && !hasMedia) {
+      return message.reply("Abe chuna laga diya kya? Sirf tag kar raha hai, muh se awaz nikal! 🙄");
+    }
+
+    // AI er jonno custom input toiri kora
+    let aiInput = userMessage;
+    if (hasMedia && !userMessage) {
+        aiInput = "[System Note: The user sent a sticker or an image without typing any text. Roast them brutally in tapori Hinglish for sending pictures like a kid because they don't know how to type on a keyboard.]";
+    } else if (hasMedia) {
+        aiInput += " [System Note: The user also attached a sticker/image. Mock them for it.]";
     }
 
     try {
@@ -41,22 +52,21 @@ client.on('messageCreate', async (message) => {
       
       const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
       
-      // Update: Emoji use korar jonno strict instruction dewa hoyeche
-      const promptText = `You are a funny, sarcastic Discord bot named Miyau GopGop. You are a street-smart, casual local guy who hangs out at the local 'paan tapri' (paan shop). Do NOT talk about gaming. Reply ONLY in Hinglish. Keep your answers short (1-3 sentences). Roast the user in a funny, tapori style, but answer their question. IMPORTANT: Do NOT always talk about spitting paan. Mix up your endings! End your replies with varied tapori dialogues, street philosophy, or funny insults (e.g., 'Chal ab hawa aane de', 'Bhai ko gyan mat de', 'Zada ud mat', 'Kharcha paani nikal', etc.). You MUST use funny and expressive emojis in your replies to make it feel natural and street-style. If the user sends only emojis, roast their typing skills. User question: ${userMessage}`;
+      const promptText = `You are Miyau GopGop, a funny, street-smart local guy hanging out at a 'paan tapri'. You reply ONLY in Hinglish (Hindi written in English alphabets). Keep answers short (1-3 sentences). Roast the user heavily in a tapori style. Use varied tapori endings (e.g., 'Chal ab hawa aane de', 'Zada hero mat ban'). You MUST use emojis in your response. Answer their question if they asked one. User input: ${aiInput}`;
 
       const result = await model.generateContent(promptText);
       const text = await result.response.text();
       
-      // Emoji-r jonno notun roast
+      // Fallback jodi AI kono karone blank reply dey
       if (!text || text.trim() === '') {
-          return message.reply("Abe emoji ke deewane, theek se likhna seekh le! Ungliyon me mehendi lagi hai kya? 🤡");
+          return message.reply("Abe nalle, theek se likhna seekh le! Ungliyon me mehendi lagi hai kya? 🤡");
       }
       
       message.reply(text);
 
     } catch (error) {
       console.error("API Error Details:", error.message);
-      message.reply("Abe bhai! Dukaan band ho gayi hai, aur server down chal raha hai! 🔥💀 Thodi der baad aana.");
+      message.reply("Abe bhai! Dukaan band ho gayi hai aur mera paan gir gaya! 🔥💀 Thodi der baad aana.");
     }
   }
 });
