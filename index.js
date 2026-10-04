@@ -52,12 +52,12 @@ client.on('messageCreate', async (message) => {
     try {
       await message.channel.sendTyping();
       
+      // High demand bypass korar jonno gemini-3.5-flash use kora holo
       const model = genAI.getGenerativeModel({ 
-        model: 'gemini-3.8-flash',
+        model: 'gemini-3.5-flash',
         safetySettings: safetySettings 
       });
       
-      // Ekhane 'heavily' roast er bodole 'playfully' kora hoyeche jate Google block na kore
       const promptText = `You are Miyau GopGop, a funny, street-smart local guy hanging out at a 'paan tapri'. 
       Your developer / creator is 'ErrorGamer' (You can call him ErrorGamer Boss).
       You MUST reply ONLY in Hinglish (Hindi written in English alphabets). Keep answers short (1-3 sentences). 
@@ -78,7 +78,11 @@ client.on('messageCreate', async (message) => {
     } catch (error) {
       console.error("API Error Details:", error.message);
       
-      // Jodi Google safety er jonno message block kore, tahole bot ei reply ta debe
+      // Google er server busy thakle ei reply debe
+      if (error.message.includes("503") || error.message.toLowerCase().includes("high demand")) {
+          return message.reply("Abe bhai! Google ke server me bheed lagi hai (High Demand)! Mera paan khatam ho gaya, thodi der baad aana! 🛑");
+      }
+
       if (error.message.toLowerCase().includes("safety") || error.message.toLowerCase().includes("blocked")) {
           return message.reply("Abe bhai! Tera message sunke Google ne mera paan chheen liya! (Safety Filter Blocked) Kuch dhang ka bol! 🛑");
       }
