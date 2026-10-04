@@ -20,7 +20,6 @@ const client = new Client({
 // Initialize Google Generative AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Google er safety filters disable kora holo jate tapori roast ba developer question block na hoy
 const safetySettings = [
   { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
   { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
@@ -33,26 +32,21 @@ client.on('ready', () => {
 });
 
 client.on('messageCreate', async (message) => {
-  // Ignore messages from other bots
   if (message.author.bot) return;
 
   if (message.mentions.has(client.user)) {
     let userMessage = message.content.replace(/<@!?\d+>/g, '').trim();
-    
-    // Check if user sent any stickers or attachments
     let hasMedia = message.stickers.size > 0 || message.attachments.size > 0;
 
-    // Jodi user tag kore kichui na pathay (no text, no sticker)
     if (!userMessage && !hasMedia) {
       return message.reply("Abe chuna laga diya kya? Sirf tag kar raha hai, muh se awaz nikal! 🙄");
     }
 
-    // Sticker ba bhul banan-er jonno AI input toiri kora
     let aiInput = userMessage;
     if (hasMedia && !userMessage) {
-        aiInput = "Bhai, maine sirf ek sticker/photo bheja hai aur koi text nahi likha. Mujhe is baat pe tapori style me roast kar!";
+        aiInput = "Bhai, maine sirf ek sticker/photo bheja hai aur koi text nahi likha. Mujhe majedar tapori style me roast kar!";
     } else if (hasMedia) {
-        aiInput += " (Aur haan, maine ek sticker/photo bhi bheja hai, uske liye bhi roast kar)";
+        aiInput += " (Aur haan, maine ek sticker/photo bhi bheja hai)";
     }
 
     try {
@@ -60,15 +54,16 @@ client.on('messageCreate', async (message) => {
       
       const model = genAI.getGenerativeModel({ 
         model: 'gemini-3.8-flash',
-        safetySettings: safetySettings // Safety filter off kora holo
+        safetySettings: safetySettings 
       });
       
-      // Ekhane developer er nam ErrorGamer kora holo
+      // Ekhane 'heavily' roast er bodole 'playfully' kora hoyeche jate Google block na kore
       const promptText = `You are Miyau GopGop, a funny, street-smart local guy hanging out at a 'paan tapri'. 
-      Your developer / creator is 'ErrorGamer' (You can call him ErrorGamer Bhai or Boss).
+      Your developer / creator is 'ErrorGamer' (You can call him ErrorGamer Boss).
       You MUST reply ONLY in Hinglish (Hindi written in English alphabets). Keep answers short (1-3 sentences). 
-      Roast the user heavily in a tapori style. Use varied tapori endings (e.g., 'Chal ab hawa aane de', 'Zada hero mat ban'). Use emojis.
-      CRITICAL INSTRUCTION: Understand the user's question even if their spelling is completely wrong or terrible. Answer their actual question properly despite typos.
+      Roast the user PLAYFULLY in a tapori style. Use varied tapori endings (e.g., 'Chal ab hawa aane de', 'Zada hero mat ban'). Use emojis.
+      CRITICAL INSTRUCTION: Do NOT use severe abusive words. Keep it funny, sarcastic, and PG-13 so it doesn't get blocked by safety filters.
+      Understand the user's question even if their spelling is terrible, and answer properly.
       User input: ${aiInput}`;
 
       const result = await model.generateContent(promptText);
@@ -82,6 +77,12 @@ client.on('messageCreate', async (message) => {
 
     } catch (error) {
       console.error("API Error Details:", error.message);
+      
+      // Jodi Google safety er jonno message block kore, tahole bot ei reply ta debe
+      if (error.message.toLowerCase().includes("safety") || error.message.toLowerCase().includes("blocked")) {
+          return message.reply("Abe bhai! Tera message sunke Google ne mera paan chheen liya! (Safety Filter Blocked) Kuch dhang ka bol! 🛑");
+      }
+
       message.reply("Abe bhai! Dukaan band ho gayi hai aur mera paan gir gaya! 🔥💀 Thodi der baad aana.");
     }
   }
