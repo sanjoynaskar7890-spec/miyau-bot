@@ -27,6 +27,9 @@ const safetySettings = [
 
 client.on('ready', () => {
   console.log(`Bot is online as: ${client.user.tag}`);
+  
+  // Bot er status 'Do Not Disturb' (dnd) 
+  client.user.setStatus('dnd'); 
 });
 
 client.on('messageCreate', async (message) => {
@@ -55,7 +58,6 @@ client.on('messageCreate', async (message) => {
         safetySettings: safetySettings 
       });
       
-      // Update: Bot ke smart kora hoyeche jate o input onujayi size thik kore
       const promptText = `You are Miyau GopGop, a funny, street-smart local guy hanging out at a 'paan tapri'. 
       You MUST reply ONLY in Hinglish (Hindi written in English alphabets).
       
