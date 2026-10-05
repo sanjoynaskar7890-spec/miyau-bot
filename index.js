@@ -1,14 +1,11 @@
 const { Client, GatewayIntentBits } = require('discord.js');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const express = require('express');
 
 const app = express();
 app.get('/', (req, res) => res.send('Miyau GopGop is running!'));
-app.listen(8080, () => console.log('Server is ready.'));
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-// Daily 1500 limit er jonno gemini-1.5-flash set kora holo
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+// Render er port auto-detect korbe
+const port = process.env.PORT || 8080;
+app.listen(port, () => console.log(`Server is ready on port ${port}.`));
 
 const client = new Client({
     intents: [
@@ -17,6 +14,44 @@ const client = new Client({
         GatewayIntentBits.MessageContent
     ]
 });
+
+// Auto-detector function for Google Gemini Model
+let WORKING_MODEL = null;
+
+async function getWorkingModel(apiKey) {
+    if (WORKING_MODEL) return WORKING_MODEL;
+    try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+        const res = await fetch(url);
+        if (res.ok) {
+            const data = await res.json();
+            const available = data.models
+                .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
+                .map(m => m.name);
+            
+            let flash = available.find(m => m.includes('1.5-flash'));
+            if (flash) { WORKING_MODEL = flash; return flash; }
+            
+            let pro = available.find(m => m.includes('gemini-pro') || m.includes('1.0-pro'));
+            if (pro) { WORKING_MODEL = pro; return pro; }
+            
+            if (available.length > 0) { WORKING_MODEL = available[0]; return WORKING_MODEL; }
+        }
+    } catch (err) {
+        console.error("Model fetch error:", err);
+    }
+    return "models/gemini-1.5-flash"; // Fallback
+}
+
+const miyauPrompt = `Tu Miyau GopGop hai, ek cute par bohot hi savage, roasting cat Discord bot.
+STRICT RULES:
+1. SIRF aur SIRF Hinglish (English alphabet mein Hindi) mein baat karni hai. Pure English ya Bengali use mat karna.
+2. EMOJIS COMPULSORY HAIN! Cat emojis aur attitude wale emojis use kar jaise: 😹, 😼, 🐾, 🔥, 😎, ✌️, 🖕.
+3. Tera attitude ek nakhrewali par khatarnak billi jaisa hona chahiye. Meow, paws, scratch aise words use kar insult karte waqt.
+4. Reply chhota, punchy, savage, aur direct hona chahiye.
+5. OWNER/DEVELOPER RULE: Agar koi puche ki tujhe kisne banaya, tera owner ya baap kaun hai, toh attitude mein bol 'ErrorGamer'.
+
+USER'S MESSAGE TO ROAST: `;
 
 client.once('ready', () => {
     client.user.setStatus('dnd');
@@ -37,49 +72,66 @@ client.on('messageCreate', async (message) => {
     }
 
     if (message.mentions.has(client.user) || message.channel.type === 1 || isReplyToBot) {
+        await message.channel.sendTyping();
         try {
-            await message.channel.sendTyping();
-
             let cleanInput = message.content.replace(/<@!?\d+>/g, '').replace(/<a?:\w+:\d+>/g, '').trim();
 
             if (!cleanInput) {
                 if (message.stickers.size > 0) {
-                    cleanInput = `[User sent a sticker named '${message.stickers.first().name}']`;
+                    cleanInput = `[User ne ek sticker bheja hai jiska naam hai '${message.stickers.first().name}']`;
                 } else if (message.attachments.size > 0) {
-                    cleanInput = "[User sent an image or file]";
+                    cleanInput = "[User ne ek photo ya file bheji hai]";
                 } else {
-                    cleanInput = "[User just pinged/tagged or replied to you without saying anything. Roast them aggressively with cat attitude for wasting your time.]";
+                    cleanInput = "[User ne bina kuch bole ping/tag kiya hai. Apna time waste karne ke liye billi ban ke usko aggressively roast kar.]";
                 }
             }
 
-            const miyauPrompt = `You are Miyau GopGop, a savage, roasting cat Discord bot.
-STRICT RULES:
-1. ONLY speak in Hinglish (Hindi written in English alphabets). Never use actual Hindi script, Bengali, or pure English.
-2. YOU MUST USE EMOJIS! Use cat emojis like 😹, 😼, 🐾, 🔥, 😎, ✌️, 🖕. You can also use custom Discord emojis if the user teaches you their code.
-3. Act like a cute but extremely aggressive and sarcastic cat. Use cat references (meow, paws, scratch) while roasting people.
-4. Keep replies short, punchy, savage, and insulting but with a cat-like attitude.
-5. OWNER/DEVELOPER RULE: If anyone asks who made you, your owner, developer, father, or boss, you MUST say 'ErrorGamer'. Show extreme attitude.
+            const finalInput = miyauPrompt + cleanInput;
+            const apiKey = process.env.GEMINI_API_KEY;
+            
+            // Auto-detect the right model
+            const modelName = await getWorkingModel(apiKey);
+            
+            const url = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: finalInput }] }],
+                safetySettings: [
+                    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+                ]
+            };
 
-User's message: ${cleanInput}`;
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
 
-            const result = await model.generateContent(miyauPrompt);
-            const replyText = result.response.text();
-
-            let sentSticker = false;
-            if (message.guild && message.guild.stickers.cache.size > 0) {
-                if (Math.floor(Math.random() * 10) < 3) { 
-                    const randomSticker = message.guild.stickers.cache.random();
-                    await message.reply({ content: replyText, stickers: [randomSticker.id] });
-                    sentSticker = true;
+            if (res.ok) {
+                const data = await res.json();
+                const replyText = data.candidates[0].content.parts[0].text;
+                
+                let sentSticker = false;
+                if (message.guild && message.guild.stickers.cache.size > 0) {
+                    if (Math.floor(Math.random() * 10) < 3) { 
+                        const randomSticker = message.guild.stickers.cache.random();
+                        await message.reply({ content: replyText, stickers: [randomSticker.id] });
+                        sentSticker = true;
+                    }
                 }
+
+                if (!sentSticker) {
+                    await message.reply(replyText);
+                }
+            } else {
+                const errText = await res.text();
+                await message.reply(`Meow API Error aa gaya! Google ne bola:\n\`\`\`${errText.substring(0, 400)}\`\`\`\n(Auto-selected model: ${modelName})`);
             }
 
-            if (!sentSticker) {
-                await message.reply(replyText);
-            }
-
-        } catch (error) {
-            await message.reply(`Meow error aa gaya: ${error.message}`);
+        } catch (e) {
+            await message.reply(`Meow error aa gaya code mein: ${e.message}`);
         }
     }
 });
