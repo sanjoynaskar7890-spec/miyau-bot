@@ -1,105 +1,91 @@
-const http = require('http');
-const { Client, GatewayIntentBits } = require('discord.js');
-const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai');
+import discord
+import os
+import google.generativeai as genai
+from flask import Flask
+from threading import Thread
+import re
+import random
 
-const server = http.createServer((req, res) => {
-  res.writeHead(200);
-  res.end('AI Bot is running perfectly!');
-});
-server.listen(process.env.PORT || 3000);
+app = Flask('')
 
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ]
-});
+@app.route('/')
+def home():
+    return "Miyau GopGop is running!"
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+def run():
+    app.run(host='0.0.0.0', port=8080)
 
-const safetySettings = [
-  { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-  { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
-  { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
-  { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-];
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
 
-client.on('ready', () => {
-  console.log(`Bot is online as: ${client.user.tag}`);
-  
-  // Bot er status 'Do Not Disturb' (dnd) 
-  client.user.setStatus('dnd'); 
-});
+DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-client.on('messageCreate', async (message) => {
-  if (message.author.bot) return;
+genai.configure(api_key=GEMINI_API_KEY)
 
-  if (message.mentions.has(client.user)) {
-    let userMessage = message.content.replace(/<@!?\d+>/g, '').trim();
-    let hasMedia = message.stickers.size > 0 || message.attachments.size > 0;
+miyau_prompt = """You are Miyau GopGop, a savage, roasting cat Discord bot.
+STRICT RULES:
+1. ONLY speak in Hinglish (Hindi written in English alphabets). Never use actual Hindi script, Bengali, or pure English.
+2. YOU MUST USE EMOJIS! Use cat emojis like 😹, 😼, 🐾, 🔥, 😎, ✌️, 🖕. You can also use custom Discord emojis if the user teaches you their code.
+3. Act like a cute but extremely aggressive and sarcastic cat. Use cat references (meow, paws, scratch) while roasting people.
+4. Keep replies short, punchy, savage, and insulting but with a cat-like attitude.
+5. OWNER/DEVELOPER RULE: If anyone asks who made you, your owner, developer, father, or boss, you MUST say 'ErrorGamer'. Show extreme attitude."""
 
-    if (!userMessage && !hasMedia) {
-      return message.reply("Abe chuna laga diya kya? Sirf tag kar raha hai, muh se awaz nikal! 🙄");
-    }
+model = genai.GenerativeModel(
+    'gemini-3.5-flash',
+    system_instruction=miyau_prompt
+)
 
-    let aiInput = userMessage;
-    if (hasMedia && !userMessage) {
-        aiInput = "Bhai, maine sirf ek sticker/photo bheja hai aur koi text nahi likha. Mujhe majedar tapori style me roast kar!";
-    } else if (hasMedia) {
-        aiInput += " (Aur haan, maine ek sticker/photo bhi bheja hai)";
-    }
+intents = discord.Intents.default()
+intents.message_content = True
+client = discord.Client(intents=intents)
 
-    try {
-      await message.channel.sendTyping();
-      
-      const model = genAI.getGenerativeModel({ 
-        model: 'gemini-3.5-flash-lite',
-        safetySettings: safetySettings 
-      });
-      
-      const promptText = `You are Miyau GopGop, a funny, street-smart local guy hanging out at a 'paan tapri'. 
-      You MUST reply ONLY in Hinglish (Hindi written in English alphabets).
-      
-      CRITICAL INSTRUCTION ON LENGTH (Be Smart):
-      - Match your response length to the user's input.
-      - If the user says a short word like 'hello', 'hi', or sends just an emoji/sticker, give a SHORT, punchy reply (1-2 lines).
-      - If the user asks a medium question, give a MEDIUM reply (3-4 lines).
-      - If the user writes a long message, give a DETAILED, LONG tapori roast (5-7 lines).
-      
-      Roast the user PLAYFULLY in a tapori style. Make your responses feel natural like a real street guy talking. Use varied tapori endings (e.g., 'Chal ab hawa aane de', 'Zada hero mat ban', 'Kharcha pani nikal'). Use emojis.
-      
-      CRITICAL INSTRUCTION ABOUT DEVELOPER: 
-      1. ONLY IF the user explicitly asks who made you, who is your developer, owner, or boss, YOU MUST say your boss and creator is 'ErrorGamer'.
-      2. IF THEY DO NOT ASK, DO NOT mention 'ErrorGamer' at all.
-      
-      CRITICAL RULE 2: Do NOT use severe abusive words. Keep it funny, sarcastic, and PG-13.
-      Understand the user's question even if their spelling is terrible.
-      User input: ${aiInput}`;
+@client.event
+async def on_ready():
+    await client.change_presence(status=discord.Status.dnd)
+    print(f'Miyau is online as {client.user}')
 
-      const result = await model.generateContent(promptText);
-      const text = await result.response.text();
-      
-      if (!text || text.trim() === '') {
-          return message.reply("Abe nalle, theek se likhna seekh le! Ungliyon me mehendi lagi hai kya? 🤡");
-      }
-      
-      message.reply(text);
+@client.event
+async def on_message(message):
+    if message.author == client.user:
+        return
 
-    } catch (error) {
-      console.error("API Error Details:", error.message);
-      
-      if (error.message.includes("503") || error.message.toLowerCase().includes("high demand")) {
-          return message.reply("Abe bhai! Google ke server me bheed lagi hai! Mera paan khatam ho gaya, thodi der baad aana! 🛑");
-      }
+    is_reply_to_bot = False
+    if message.reference and hasattr(message.reference, 'resolved'):
+        if hasattr(message.reference.resolved, 'author') and message.reference.resolved.author == client.user:
+            is_reply_to_bot = True
 
-      if (error.message.toLowerCase().includes("safety") || error.message.toLowerCase().includes("blocked")) {
-          return message.reply("Abe bhai! Tera message sunke Google ne mera paan chheen liya! Kuch dhang ka bol! 🛑");
-      }
+    if client.user in message.mentions or isinstance(message.channel, discord.DMChannel) or is_reply_to_bot:
+        async with message.channel.typing():
+            try:
+                clean_input = re.sub(r'<@!?\d+>', '', message.content) 
+                clean_input = re.sub(r'<a?:\w+:\d+>', '', clean_input) 
+                
+                if not clean_input.strip():
+                    if message.stickers:
+                        clean_input = f"[User sent a sticker named '{message.stickers[0].name}']"
+                    elif message.attachments:
+                        clean_input = "[User sent an image or file]"
+                    else:
+                        clean_input = "[User just pinged/tagged or replied to you without saying anything. Roast them aggressively with cat attitude for wasting your time.]"
+                
+                response = model.generate_content(clean_input)
+                reply_text = response.text.encode('utf-8', 'ignore').decode('utf-8')
+                
+                sent_sticker = False
+                if message.guild and message.guild.stickers:
+                    if random.randint(1, 10) <= 3: 
+                        random_sticker = random.choice(message.guild.stickers)
+                        await message.reply(reply_text, stickers=[random_sticker])
+                        sent_sticker = True
+                
+                if not sent_sticker:
+                    await message.reply(reply_text)
+                
+            except Exception as e:
+                await message.reply(f"Meow error aa gaya: {e}")
 
-      message.reply("Abe bhai! Dukaan band ho gayi hai aur mera paan gir gaya! 🔥💀 Thodi der baad aana.");
-    }
-  }
-});
-
-client.login(process.env.DISCORD_TOKEN);
+keep_alive()
+client.run(DISCORD_TOKEN)
+              
