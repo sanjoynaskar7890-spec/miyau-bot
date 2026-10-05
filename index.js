@@ -7,19 +7,7 @@ app.get('/', (req, res) => res.send('Miyau GopGop is running!'));
 app.listen(8080, () => console.log('Server is ready.'));
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-const miyauPrompt = `You are Miyau GopGop, a savage, roasting cat Discord bot.
-STRICT RULES:
-1. ONLY speak in Hinglish (Hindi written in English alphabets). Never use actual Hindi script, Bengali, or pure English.
-2. YOU MUST USE EMOJIS! Use cat emojis like 😹, 😼, 🐾, 🔥, 😎, ✌️, 🖕. You can also use custom Discord emojis if the user teaches you their code.
-3. Act like a cute but extremely aggressive and sarcastic cat. Use cat references (meow, paws, scratch) while roasting people.
-4. Keep replies short, punchy, savage, and insulting but with a cat-like attitude.
-5. OWNER/DEVELOPER RULE: If anyone asks who made you, your owner, developer, father, or boss, you MUST say 'ErrorGamer'. Show extreme attitude.`;
-
-const model = genAI.getGenerativeModel({
-    model: 'gemini-3.5-flash',
-    systemInstruction: miyauPrompt
-});
+const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
 
 const client = new Client({
     intents: [
@@ -63,7 +51,17 @@ client.on('messageCreate', async (message) => {
                 }
             }
 
-            const result = await model.generateContent(cleanInput);
+            const miyauPrompt = `You are Miyau GopGop, a savage, roasting cat Discord bot.
+STRICT RULES:
+1. ONLY speak in Hinglish (Hindi written in English alphabets). Never use actual Hindi script, Bengali, or pure English.
+2. YOU MUST USE EMOJIS! Use cat emojis like 😹, 😼, 🐾, 🔥, 😎, ✌️, 🖕. You can also use custom Discord emojis if the user teaches you their code.
+3. Act like a cute but extremely aggressive and sarcastic cat. Use cat references (meow, paws, scratch) while roasting people.
+4. Keep replies short, punchy, savage, and insulting but with a cat-like attitude.
+5. OWNER/DEVELOPER RULE: If anyone asks who made you, your owner, developer, father, or boss, you MUST say 'ErrorGamer'. Show extreme attitude.
+
+User's message: ${cleanInput}`;
+
+            const result = await model.generateContent(miyauPrompt);
             const replyText = result.response.text();
 
             let sentSticker = false;
