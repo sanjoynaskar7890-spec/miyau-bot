@@ -7,7 +7,8 @@ app.get('/', (req, res) => res.send('Miyau GopGop is running!'));
 app.listen(8080, () => console.log('Server is ready.'));
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+// Daily 1500 limit er jonno gemini-1.5-flash set kora holo
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 const client = new Client({
     intents: [
